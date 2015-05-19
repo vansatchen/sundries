@@ -1,0 +1,52 @@
+#!/bin/bash
+
+userdb=user
+passdb=password
+database=mail
+myhost=mail.example.com
+tabledb=new_aliases
+maildircolumn=maildir
+userscolumn=alias
+mysqlconnect="mysql -h $myhost -u $userdb -p$passdb -D $database"
+sogomaildir=/mnt/data/vmail/vmail1/example.com
+usersfile=/home/ugu/maildirsync/customusers.txt
+txtred='\033[0;31m'
+txtnormal='\033[0m'
+txtyellow='\033[0;33m'
+
+echo ""
+[ $# -eq "0" ] && echo -en "$txtred""Please, enter arguments(file,all)$txtnormal" && echo "" && exit 1
+if [ $1 == "all" ]; then
+#	userstosync=`$mysqlconnect -B -N -e "select $userscolumn from $tabledb;" | sed 's#@example.com##g'`
+	maildirstosync=`$mysqlconnect -B -N -e "select $maildircolumn from $tabledb;"`
+	echo "Users will be get from MySQL"
+else
+	if [ $1 == "file" ]; then
+		echo "Users will be get from $usersfile"
+		maildirstosync=`$mysqlconnect -B -N -e "select $maildircolumn from $tabledb;"`
+	else
+		echo -en "$txtred""Bad argument$txtnormal"
+		echo ""
+		exit 1
+	fi
+fi
+
+for maildirtosync in $maildirstosync; do
+	usertosync=`$mysqlconnect -B -N -e "select $userscolumn from $tabledb where $maildircolumn like '$maildirtosync';" | sed 's#@example.com##g'`
+	if [ $1 == "file" ]; then
+		grep $usertosync $usersfile &> /dev/null
+		checkstatus=$?
+	else
+		checkstatus=0
+	fi
+	if [ $checkstatus -eq 0 ]; then
+		echo "Syncing $usertosync@example.com" && echo "Processing, please wait a while..."
+		[ ! -d $sogomaildir/$usertosync/Maildir/ ] && mkdir -p $sogomaildir/$usertosync/Maildir/
+		rsync -az --delete -e "ssh -p port" --exclude 'courier*' $userdb@$myhost:$maildirtosync $sogomaildir/$usertosync/Maildir/
+		chown -R vmail:vmail $sogomaildir/
+	fi
+done
+
+echo ""
+echo "syncing at `date`" >> /path/maildirsync/log
+exit 0

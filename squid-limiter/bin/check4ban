@@ -1,0 +1,81 @@
+#!/bin/bash
+
+# No longer using. Checking for user-running.
+#ONLYDEBUG=0
+LDAPSERVER="example.com"
+LDAPAUTHUSER="user"
+LDAPAUTHPASS="password"
+LDAPGROUPBASE="OU=proxy,OU=Groups,DC=example,DC=com"
+LDAPUSERSBASE="ou=Staff,dc=example,dc=com"
+REPORTDIR=/var/lib/lightsquid/report
+OVERLIMITSLIST=/etc/squid3/acl/banned_overlimits
+UNBANLIST=/etc/squid3/acl/unbanned_overlimits
+DENIEDUSERS=/etc/squid3/acl/denied_users
+TODAYDATE=`date +%Y%m%d`
+ZERODAY=0
+#DAYOFWEEKold=`date +%u -d "1 day ago"`
+DAYOFWEEK=`date +%u -d "1 day ago"`
+DAYOFWEEKNOW=`date +%u`
+
+# Check the script is being run by root
+if [ "$(id -u)" != "0" ]; then
+   ONLYDEBUG=1
+else 
+   ONLYDEBUG=0
+fi
+
+# Clean OVERLIMITSLIST
+[ $ONLYDEBUG -ne 1 ] && cat $DENIEDUSERS > $OVERLIMITSLIST
+
+[ $ONLYDEBUG -ne 0 ] && echo =======================
+
+# Check that directory with today statistic exist
+if [ ! -d $REPORTDIR/$TODAYDATE ]; then echo "!!! Lightsquid have not statistic for today !!!" && exit 1; fi
+
+# Search for PROXY-groups
+PROXYGROUPS=$(ldapsearch -P3 -LLL -x -b $LDAPGROUPBASE -D $LDAPAUTHUSER -w $LDAPAUTHPASS -H ldap://$LDAPSERVER '(sAMAccountName=proxy*)' name | grep name | awk '{print $2}')
+if [ $? -ne 0 ]; then echo "$0: LDAP lookup error: $PROXYGROUPS"; exit 10; fi
+
+# Search for USERS in each PROXY-groups
+for PROXYGROUP in $PROXYGROUPS
+do
+   USERSinPROXYGROUP=$(ldapsearch -P3 -LLL -x -b $LDAPUSERSBASE -D $LDAPAUTHUSER -w $LDAPAUTHPASS -H ldap://$LDAPSERVER "(memberOf=CN=$PROXYGROUP,$LDAPGROUPBASE)" sAMAccountName | grep sAMAccountName | awk '{print $2}')
+   USERLIMIT=${PROXYGROUP:6}
+   USERLIMITCLEAN=$[$USERLIMIT*1024*1024]
+   [ $ONLYDEBUG -ne 0 ] && echo "Users in $PROXYGROUP:"
+   for USERinPROXYGROUP in $USERSinPROXYGROUP
+   do
+      TOTALUSERDATA=0
+      [ $ONLYDEBUG -ne 0 ] && echo "$USERinPROXYGROUP with limit $USERLIMIT MB"
+      for ((DAYOFWEEKEXT=0; DAYOFWEEKEXT <= DAYOFWEEK ; DAYOFWEEKEXT++))
+      do
+         DAYOFWEEKAGOold=`date +%Y%m%d -d "$DAYOFWEEKEXTold day ago"`
+         DAYOFWEEKAGO=`date +%Y%m%d -d "$DAYOFWEEKEXT day ago"`
+         if [ -a $REPORTDIR/$DAYOFWEEKAGO/$USERinPROXYGROUP ]; then
+            USERSTATISTIC=`cat $REPORTDIR/$DAYOFWEEKAGO/$USERinPROXYGROUP | awk 'NR==1 {print $2}'`
+            [ $ONLYDEBUG -ne 0 ] && echo "$DAYOFWEEKAGO: $USERSTATISTIC"
+            TOTALUSERDATA=$[$TOTALUSERDATA+$USERSTATISTIC]
+         else
+            [ $ONLYDEBUG -ne 0 ] && echo "$DAYOFWEEKAGO: no data"
+         fi
+      done
+      [ $ONLYDEBUG -ne 0 ] && echo "$USERinPROXYGROUP totaly gets $TOTALUSERDATA bytes ($[$TOTALUSERDATA/1024/1024]MB)"
+      if [ $TOTALUSERDATA -ge $USERLIMITCLEAN ]; then
+         [ $ONLYDEBUG -ne 0 ] && echo "!!! $USERinPROXYGROUP was exceeded limit !!!"
+         if grep -Fxq $USERinPROXYGROUP $UNBANLIST; then
+            [ $ONLYDEBUG -ne 0 ] && echo "!!!$USERinPROXYGROUP founded in unbanlist!!!"
+         else
+            [ $ONLYDEBUG -ne 0 ] && echo "!!!$USERinPROXYGROUP NOT founded in unbanlist!!!"
+            [ $ONLYDEBUG -ne 1 ] && [ $DAYOFWEEKNOW -ne 1 ] && echo $USERinPROXYGROUP >> $OVERLIMITSLIST
+         fi
+      fi
+      if grep -Fxq $USERinPROXYGROUP $UNBANLIST; then echo "!!!$USERinPROXYGROUP founded in unbanlist!!!"; fi
+      [ $ONLYDEBUG -ne 0 ] && echo -----------------------
+   done
+   [ $ONLYDEBUG -ne 0 ] && echo =======================
+done
+
+# Command to squid for users in OVERLIMITSLIST
+[ $ONLYDEBUG -ne 1 ] && sleep 3 && /usr/sbin/squid3 -k reconfigure
+
+exit 0
