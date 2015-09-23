@@ -1,11 +1,10 @@
 #!/bin/bash
 
-userdb=user
-passdb=password
-database=asteriskdatabase
-hostdb=host
-tabledb=sipuserstable
-
+userdb=root
+passdb=d7bv3mnc
+database=asteriskdb
+hostdb=localhost
+tabledb=sipusers
 mysqlconnect="mysql -h $hostdb -u $userdb -p$passdb -D $database"
 
 [ $# -eq 0 ] && echo "Available arguments are 'create', 'drop', 'truncate'" && exit 1
@@ -14,7 +13,8 @@ if [ $1 == "create" ]; then
 	if [ $($mysqlconnect -B -N -e "select count(*) from information_schema.tables where table_schema='$database' and table_name='$tabledb';") -eq 1 ]; then
 		echo "Table $sipusers already exist" && exit 2
 	else
-		$mysqlconnect -B -N -e "CREATE TABLE $tabledb (id int(11) NOT NULL AUTO_INCREMENT,allow varchar(100) DEFAULT 'g729;ilbc;gsm;ulaw;alaw',context varchar(80) DEFAULT 'default',dtmfmode varchar(7) DEFAULT 'auto',host varchar(31) NOT NULL DEFAULT 'dynamic',insecure varchar(20) DEFAULT 'port,invite',mailbox varchar(50) DEFAULT NULL,musiconhold varchar(100) DEFAULT NULL,nat varchar(5) NOT NULL DEFAULT 'no',secret varchar(80) NOT NULL DEFAULT '1234',type varchar(6) NOT NULL DEFAULT 'friend',defaultuser varchar(80) NOT NULL DEFAULT '',videosupport enum('yes','no') DEFAULT 'yes',name varchar(50) DEFAULT NULL,ipaddr varchar(20) DEFAULT NULL,disallow varchar(100) DEFAULT NULL,port varchar(5) DEFAULT '5060',regseconds int(11) DEFAULT '0',lastms varchar(20) DEFAULT NULL,fullcontact varchar(80) DEFAULT NULL,useragent varchar(20) DEFAULT NULL,PRIMARY KEY (id)) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;"
+#		$mysqlconnect -B -N -e "CREATE TABLE $tabledb (id int(11) NOT NULL AUTO_INCREMENT,allow varchar(100) DEFAULT 'g729;ilbc;gsm;ulaw;alaw',context varchar(80) DEFAULT 'default',dtmfmode varchar(7) DEFAULT 'auto',host varchar(31) NOT NULL DEFAULT 'dynamic',insecure varchar(20) DEFAULT 'port,invite',mailbox varchar(50) DEFAULT NULL,musiconhold varchar(100) DEFAULT NULL,nat varchar(5) NOT NULL DEFAULT 'no',secret varchar(80) NOT NULL DEFAULT '1234',type varchar(6) NOT NULL DEFAULT 'friend',defaultuser varchar(80) NOT NULL DEFAULT '',videosupport enum('yes','no') DEFAULT 'yes',name varchar(50) DEFAULT NULL,ipaddr varchar(20) DEFAULT NULL,disallow varchar(100) DEFAULT NULL,port varchar(5) DEFAULT '5060',regseconds int(11) DEFAULT '0',lastms varchar(20) DEFAULT NULL,fullcontact varchar(80) DEFAULT NULL,useragent varchar(20) DEFAULT NULL,PRIMARY KEY (id)) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;"
+		$mysqlconnect -B -N -e "CREATE TABLE $tabledb (id int(11) NOT NULL AUTO_INCREMENT,allow varchar(100) DEFAULT 'g729;ilbc;gsm;ulaw;alaw',callerid varchar(80) DEFAULT NULL,context varchar(80) DEFAULT 'default',dtmfmode varchar(7) DEFAULT 'auto',host varchar(31) NOT NULL DEFAULT 'dynamic',insecure varchar(20) DEFAULT 'port,invite',mailbox varchar(50) DEFAULT NULL,musiconhold varchar(100) DEFAULT NULL,nat varchar(5) NOT NULL DEFAULT 'no',secret varchar(80) NOT NULL DEFAULT '1234',type varchar(6) NOT NULL DEFAULT 'friend',defaultuser varchar(80) DEFAULT NULL,videosupport enum('yes','no') DEFAULT 'yes',name varchar(50) DEFAULT NULL,ipaddr varchar(20) DEFAULT NULL,disallow varchar(100) DEFAULT NULL,port varchar(5) DEFAULT '5060',regseconds int(11) DEFAULT '0',lastms varchar(20) DEFAULT NULL,fullcontact varchar(80) DEFAULT NULL,useragent varchar(20) DEFAULT NULL,PRIMARY KEY (id)) ENGINE=InnoDB AUTO_INCREMENT=2 DEFAULT CHARSET=utf8 ROW_FORMAT=DYNAMIC;"
 		echo "Done!" && exit 0
 	fi
 fi

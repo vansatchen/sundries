@@ -2,17 +2,16 @@
 
 # Script for managing sip-users for asterisk in mysql
 
-userdb=asteriskuser
-passdb=asteriskpassword
-database=asteriskdatabase
-hostdb=host
-tabledb=sipuserstable
+userdb=asterisk
+passdb=astpass
+database=asteriskdb
+hostdb=localhost
+tabledb=sipusers
 mysqlconnect="mysql -h $hostdb -u $userdb -p$passdb -D $database"
 txtred='\033[0;31m'
 txtyellow='\033[0;33m'
 txtnormal='\033[0m'
 onlynumbers='^[0-9]+$'
-defaultcontext=default
 
 # showing menu
 PS3="Please enter an action: "
@@ -25,120 +24,145 @@ case $actitem in
 	break
 	;;
     Add)
-	echo -n "Callnumber: "
-	while read sipdefaultuser ; do
-		# check that input data is a digital
-		# check that sipdefaultuser exists
-		checkdefaultuser=`$mysqlconnect -B -N -e "select defaultuser from $tabledb where defaultuser = '$sipdefaultuser';"`
-		if [ "$checkdefaultuser" == "$sipdefaultuser" ]; then
-			echo -en "$txtred""Callnumber $txtyellow$sipdefaultuser$txtred already exists, please enter another: ""$txtnormal"
-		else
-			# check that input data is a digital
-			if [[ $sipdefaultuser =~ $onlynumbers ]] ; then
-				[ "4" -eq `echo -n $sipdefaultuser | wc -m` ] && break || echo -en "$txtred""Callnumber must have 4 digitals only, please enter another: ""$txtnormal"
-			else
-				echo -en "$txtred""Callnumber must be numeric only, please enter another: ""$txtnormal"
-			fi
-		fi
-	done
-	echo -n "Group(context)[$defaultcontext]: "
+#	echo -n "Callnumber: "
+#	while read sipdefaultuser ; do
+#		# check that input data is a digital
+#		# check that sipdefaultuser exists
+#		checkdefaultuser=`$mysqlconnect -B -N -e "select defaultuser from $tabledb where defaultuser = '$sipdefaultuser';"`
+#		if [ "$checkdefaultuser" == "$sipdefaultuser" ]; then
+#			echo -en "$txtred""Callnumber $txtyellow$sipdefaultuser$txtred already exists, please enter another: ""$txtnormal"
+#		else
+#			# check that input data is a digital
+#			if [[ $sipdefaultuser =~ $onlynumbers ]] ; then
+#				[ "4" -eq `echo -n $sipdefaultuser | wc -m` ] && break || echo -en "$txtred""Callnumber must have 4 digitals only, please enter another: ""$txtnormal"
+#			else
+#				echo -en "$txtred""Callnumber must be numeric only, please enter another: ""$txtnormal"
+#			fi
+#		fi
+#	done
+	echo -n "Group(context)[bngf]: "
 	read sipcontext
-	[ -z "$sipcontext" ] && sipcontext="$defaultcontext"
-	echo -n "Name: "
+	[ -z "$sipcontext" ] && sipcontext="bngf"
+	echo -n "Name/number: "
 	while read sipname ; do
 		# check that sipname exists
-		checkname=`$mysqlconnect -B -N -e "select name from $tabledb where name = $sipname;"`
+		checkname=`$mysqlconnect -B -N -e "select name from $tabledb where name = '$sipname';"`
 		if [ "$checkname" == "$sipname" ]; then
-			echo -en "$txtred""Name $txtyellow$sipname$txtred already exists, please enter another: ""$txtnormal"
+			echo -en "$txtred""Name/number $txtyellow$sipname$txtred already exists, please enter another: ""$txtnormal"
 		else
-			break
+			# check that input data is a digital
+			if [[ $sipname =~ $onlynumbers ]] ; then
+				[ "4" -eq `echo -n $sipname | wc -m` ] && break || echo -en "$txtred""Name/number must have 4 digitals only, please enter another: ""$txtnormal"
+			else
+				echo -en "$txtred""Name/number must be numeric only, please enter another: ""$txtnormal"
+			fi
+#			break
 		fi
 	done
 	echo -n "Password: "
 	read sipsecret
+	echo -n "Callerid[bngfuser]: "
+	read sipcallerid
+	[ -z "$sipcallerid" ] && sipcallerid="bngfuser"
 	# write users items to db
-	$mysqlconnect -e "INSERT INTO $tabledb (context,defaultuser,secret,name) VALUES ('$sipcontext','$sipdefaultuser','$sipsecret','$sipname');"
+#	$mysqlconnect -e "INSERT INTO $tabledb (context,defaultuser,secret,name,callerid) VALUES ('$sipcontext','$sipdefaultuser','$sipsecret','$sipname','bngfuser');"
+	$mysqlconnect -e "INSERT INTO $tabledb (context,defaultuser,secret,name,callerid) VALUES ('$sipcontext','$sipname','$sipsecret','$sipname','$sipcallerid');"
 	echo "Done."
         ;;
     Del)
-	echo -n "Callnumber to delete: "
-	while read sipdefaultuser ; do
-		# check that sipdefaultuser exists
-		checkdefaultuser=`$mysqlconnect -B -N -e "select defaultuser from $tabledb where defaultuser = $sipdefaultuser;"`
-		if [ "$checkdefaultuser" == "$sipdefaultuser" ]; then
+	echo -n "Name/number to delete: "
+	while read sipname ; do
+		# check that sipname exists
+		checkname=`$mysqlconnect -B -N -e "select name from $tabledb where name = $sipname;"`
+		if [ "$checkname" == "$sipname" ]; then
 			break
 		else
-			echo -en "$txtred""Callnumber $txtyellow$sipdefaultuser$txtred not exists, please enter another: ""$txtnormal"
+			echo -en "$txtred""Name/number $txtyellow$sipname$txtred not exists, please enter another: ""$txtnormal"
 		fi
 	done
-	$mysqlconnect -e "DELETE FROM $tabledb WHERE defaultuser = $sipdefaultuser;"
+	$mysqlconnect -e "DELETE FROM $tabledb WHERE name = $sipname;"
 	echo "Done."
         ;;
     Show)
-	$mysqlconnect -e "SELECT defaultuser,secret,context,name FROM $tabledb;"
+	$mysqlconnect -e "SELECT context,name,secret,callerid FROM $tabledb;"
 	;;
     Edit)
-	echo -n "Callnumber to edit: "
-	# check that sipdefaultuser exists
-	while read sipdefaultuser ; do
-		checkdefaultuser=`$mysqlconnect -B -N -e "SELECT defaultuser FROM $tabledb WHERE defaultuser = '$sipdefaultuser';"`
-		if [ "$checkdefaultuser" == "$sipdefaultuser" ]; then
+	echo -n "Name/number to edit: "
+	# check that sipname exists
+	while read sipname ; do
+		checkname=`$mysqlconnect -B -N -e "SELECT name FROM $tabledb WHERE name = '$sipname';"`
+		if [ "$checkname" == "$sipname" ]; then
 			# check that input data is a digital
 			break
 		else
-			echo -en "$txtred""Callnumber $txtyellow$sipdefaultuser$txtred not exists, please enter another: ""$txtnormal"
+			echo -en "$txtred""Name/number $txtyellow$sipname$txtred not exists, please enter another: ""$txtnormal"
 		fi
 	done
-	# old defaultuser as default
-	olddefaultuser=`$mysqlconnect -B -N -e "SELECT defaultuser FROM $tabledb WHERE defaultuser = '$sipdefaultuser';"`
-	echo -n "New callnumber[$olddefaultuser]: "
-	while read newdefaultuser ; do
-	[ -z "$newdefaultuser" ] && break
-	# check that sipdefaultuser exists
-		checkdefaultuser=`$mysqlconnect -B -N -e "select defaultuser from $tabledb where defaultuser = '$newdefaultuser';"`
-		if [ "$checkdefaultuser" == "$newdefaultuser" ]; then
-			echo -en "$txtred""Callnumber $txtyellow$newdefaultuser$txtred already exists, please enter another:""$txtnormal"
-		else
-			# check that input data is a digital
-			if [[ $newdefaultuser =~ $onlynumbers ]] ; then
-				[ "4" -eq `echo -n $newdefaultuser | wc -m` ] && \
-				$mysqlconnect -e "UPDATE $tabledb SET defaultuser = '$newdefaultuser' WHERE defaultuser = '$sipdefaultuser';" && \
-				sipdefaultuser=$newdefaultuser && \
-				break || \
-				echo -en "$txtred""Callnumber must have 4 digitals only, please enter another: ""$txtnormal"
-			else
-				echo -en "$txtred""Callnumber must be numeric only, please enter another: ""$txtnormal"
-			fi
-		fi
-	done
+#	# old defaultuser as default
+#	olddefaultuser=`$mysqlconnect -B -N -e "SELECT defaultuser FROM $tabledb WHERE defaultuser = '$sipdefaultuser';"`
+#	echo -n "New callnumber[$olddefaultuser]: "
+#	while read newdefaultuser ; do
+#	[ -z "$newdefaultuser" ] && break
+#	# check that sipdefaultuser exists
+#		checkdefaultuser=`$mysqlconnect -B -N -e "select defaultuser from $tabledb where defaultuser = '$newdefaultuser';"`
+#		if [ "$checkdefaultuser" == "$newdefaultuser" ]; then
+#			echo -en "$txtred""Callnumber $txtyellow$newdefaultuser$txtred already exists, please enter another:""$txtnormal"
+#		else
+#			# check that input data is a digital
+#			if [[ $newdefaultuser =~ $onlynumbers ]] ; then
+#				[ "4" -eq `echo -n $newdefaultuser | wc -m` ] && \
+#				$mysqlconnect -e "UPDATE $tabledb SET defaultuser = '$newdefaultuser' WHERE defaultuser = '$sipdefaultuser';" && \
+#				sipdefaultuser=$newdefaultuser && \
+#				break || \
+#				echo -en "$txtred""Callnumber must have 4 digitals only, please enter another: ""$txtnormal"
+#			else
+#				echo -en "$txtred""Callnumber must be numeric only, please enter another: ""$txtnormal"
+#			fi
+#		fi
+#	done
 	# old context as default
-	oldcontext=`$mysqlconnect -B -N -e "SELECT context FROM $tabledb WHERE defaultuser = '$sipdefaultuser';"`
+	oldcontext=`$mysqlconnect -B -N -e "SELECT context FROM $tabledb WHERE name = '$sipname';"`
 	echo -n "New group(context)[$oldcontext]: "
 	read newcontext
-	[ -z "$newcontext" ] || $mysqlconnect -e "UPDATE $tabledb SET context = '$newcontext' WHERE defaultuser = '$sipdefaultuser';"
+	[ -z "$newcontext" ] || $mysqlconnect -e "UPDATE $tabledb SET context = '$newcontext' WHERE name = '$sipname';"
 	# old name as default
-	oldname=`$mysqlconnect -B -N -e "SELECT name FROM $tabledb WHERE defaultuser = '$sipdefaultuser';"`
-	echo -n "New name[$oldname]: "
+	oldname=`$mysqlconnect -B -N -e "SELECT name FROM $tabledb WHERE name = '$sipname';"`
+	echo -n "New name/number[$oldname]: "
 	while read newname ; do
 	[ -z "$newname" ] && break
+		# check that newname exists
 		checkname=`$mysqlconnect -B -N -e "select name from $tabledb where name = '$newname';"`
 		if [ "$checkname" == "$newname" ]; then
-			echo -en "$txtred""Name $txtyellow$newname$txtred already exists, please enter another: ""$txtnormal"
+			echo -en "$txtred""Name/number $txtyellow$newname$txtred already exists, please enter another: ""$txtnormal"
 		else
-			$mysqlconnect -e "UPDATE $tabledb SET name = '$newname' WHERE defaultuser = '$sipdefaultuser';"
-			break
+			# check that input data is a digital
+			if [[ $newname =~ $onlynumbers ]] ; then
+				[ "4" -eq `echo -n $newname | wc -m` ] && \
+				$mysqlconnect -e "UPDATE $tabledb SET name = '$newname' WHERE name = '$sipname';" && \
+				sipname=$newname && break || \
+				echo -en "$txtred""Name/number must have 4 digitals only, please enter another: ""$txtnormal"
+			else
+				echo -en "$txtred""Name/number must be numeric only, please enter another: ""$txtnormal"
+			fi
+#			$mysqlconnect -e "UPDATE $tabledb SET name = '$newname' WHERE name = '$sipname';"
+#			sipname=$newname && break
 		fi
 	done
 	# old secret as default
-	oldsecret=`$mysqlconnect -B -N -e "SELECT secret FROM $tabledb WHERE defaultuser = '$sipdefaultuser';"`
+	oldsecret=`$mysqlconnect -B -N -e "SELECT secret FROM $tabledb WHERE name = '$sipname';"`
 	echo -n "New password(secret)[$oldsecret]: "
 	read newsecret
-	[ -z "$newsecret" ] || $mysqlconnect -e "UPDATE $tabledb SET secret = '$newsecret' WHERE defaultuser = '$sipdefaultuser';"
+	[ -z "$newsecret" ] || $mysqlconnect -e "UPDATE $tabledb SET secret = '$newsecret' WHERE name = '$sipname';"
+	# old callerid as default
+	oldcallerid=`$mysqlconnect -B -N -e "SELECT callerid FROM $tabledb WHERE name = '$sipname';"`
+	echo -n "New callerid[$oldcallerid]: "
+	read newcallerid
+	[ -z "$newcallerid" ] || $mysqlconnect -e "UPDATE $tabledb SET callerid = '$newcallerid' WHERE name = '$sipname';"
 	echo "Done."
 	;;
     *)
 	echo "Show as default for unusable action"
-	$mysqlconnect -e "SELECT defaultuser,secret,context,name FROM $tabledb;"
+	$mysqlconnect -e "SELECT context,name,secret,callerid FROM $tabledb;"
         ;;
 esac
 done
