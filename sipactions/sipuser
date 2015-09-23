@@ -2,9 +2,9 @@
 
 # Script for managing sip-users for asterisk in mysql
 
-userdb=asterisk
-passdb=astpass
-database=asteriskdb
+userdb=user
+passdb=password
+database=asteriskdatabase
 hostdb=localhost
 tabledb=sipusers
 mysqlconnect="mysql -h $hostdb -u $userdb -p$passdb -D $database"
@@ -40,9 +40,9 @@ case $actitem in
 #			fi
 #		fi
 #	done
-	echo -n "Group(context)[bngf]: "
+	echo -n "Group(context)[default]: "
 	read sipcontext
-	[ -z "$sipcontext" ] && sipcontext="bngf"
+	[ -z "$sipcontext" ] && sipcontext="default"
 	echo -n "Name/number: "
 	while read sipname ; do
 		# check that sipname exists
@@ -61,11 +61,11 @@ case $actitem in
 	done
 	echo -n "Password: "
 	read sipsecret
-	echo -n "Callerid[bngfuser]: "
+	echo -n "Callerid[defaultuser]: "
 	read sipcallerid
-	[ -z "$sipcallerid" ] && sipcallerid="bngfuser"
+	[ -z "$sipcallerid" ] && sipcallerid="defaultuser"
 	# write users items to db
-#	$mysqlconnect -e "INSERT INTO $tabledb (context,defaultuser,secret,name,callerid) VALUES ('$sipcontext','$sipdefaultuser','$sipsecret','$sipname','bngfuser');"
+#	$mysqlconnect -e "INSERT INTO $tabledb (context,defaultuser,secret,name,callerid) VALUES ('$sipcontext','$sipdefaultuser','$sipsecret','$sipname','defaultuser');"
 	$mysqlconnect -e "INSERT INTO $tabledb (context,defaultuser,secret,name,callerid) VALUES ('$sipcontext','$sipname','$sipsecret','$sipname','$sipcallerid');"
 	echo "Done."
         ;;

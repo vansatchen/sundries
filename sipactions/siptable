@@ -1,8 +1,8 @@
 #!/bin/bash
 
-userdb=root
-passdb=d7bv3mnc
-database=asteriskdb
+userdb=user
+passdb=password
+database=asteriskdatabase
 hostdb=localhost
 tabledb=sipusers
 mysqlconnect="mysql -h $hostdb -u $userdb -p$passdb -D $database"
