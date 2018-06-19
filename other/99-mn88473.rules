@@ -1,0 +1,1 @@
+SUBSYSTEM=="dvb", KERNEL=="dvb[0-9].frontend0", DEVPATH=="/devices/pci0000:00/0000:00:04.1/usb1/1-2/dvb/dvb0.frontend0", PROGRAM="/bin/sh -c '/bin/mv /dev/dvb/adapter0/frontend0 /dev/dvb/adapter0/frontend2'"
