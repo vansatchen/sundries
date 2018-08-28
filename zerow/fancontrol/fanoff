@@ -1,0 +1,10 @@
+#!/bin/bash
+
+if [ ! -L /sys/class/gpio/gpio9 ]; then
+	echo "gpio9 not exist"
+	echo 9 > /sys/class/gpio/export
+	sleep 1
+	echo out > /sys/class/gpio/gpio9/direction
+	sleep 1
+fi
+echo 9 > /sys/class/gpio/unexport

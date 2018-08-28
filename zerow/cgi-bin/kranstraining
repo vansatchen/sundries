@@ -1,0 +1,54 @@
+#!/bin/bash
+
+kran1close="4"
+kran1open="27"
+kran2close="10"
+kran2open="22"
+workperiod="8"
+
+for krangpiopin in $kran1close $kran1open $kran2close $kran2open
+do
+	if [ ! -L /sys/class/gpio/gpio$krangpiopin ]; then
+		echo $krangpiopin > /sys/class/gpio/export
+		sleep 1
+		echo out > /sys/class/gpio/gpio$krangpiopin/direction
+		sleep 1
+		echo 1 > /sys/class/gpio/gpio$krangpiopin/value
+	fi
+done
+
+sleep 1
+# Open kran1
+echo 0 > /sys/class/gpio/gpio$kran1open/value
+sleep $workperiod
+echo 1 > /sys/class/gpio/gpio$kran1open/value
+sleep 1
+# Close kran1
+echo 0 > /sys/class/gpio/gpio$kran1close/value
+sleep $workperiod
+echo 1 > /sys/class/gpio/gpio$kran1close/value
+sleep 1
+# Halfopen kran1
+echo 0 > /sys/class/gpio/gpio$kran1open/value
+sleep 3
+echo 1 > /sys/class/gpio/gpio$kran1open/value
+sleep 1
+# Open kran2
+echo 0 > /sys/class/gpio/gpio$kran2open/value
+sleep $workperiod
+echo 1 > /sys/class/gpio/gpio$kran2open/value
+sleep 1
+# Close kran2
+echo 0 > /sys/class/gpio/gpio$kran2close/value
+sleep $workperiod
+echo 1 > /sys/class/gpio/gpio$kran2close/value
+sleep 1
+# Halfopen kran2
+echo 0 > /sys/class/gpio/gpio$kran2open/value
+sleep 3
+echo 1 > /sys/class/gpio/gpio$kran2open/value
+sleep 1
+/usr/bin/curl -k "http://domoticz:8080/json.htm?type=command&param=switchlight&idx=41&switchcmd=Set%20Level&level=0"
+/usr/bin/curl -k "http://domoticz:8080/json.htm?type=command&param=switchlight&idx=42&switchcmd=Set%20Level&level=0"
+
+exit 0
