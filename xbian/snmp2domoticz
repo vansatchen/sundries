@@ -1,0 +1,22 @@
+#!/bin/bash
+
+snmpcmd2nas="/usr/bin/snmpget -Osv -v 2c -c dlink domoticz"
+
+# NAS CPU Temperature
+nascputemp=`$snmpcmd2nas .1.3.6.1.3.35517.2.1.3.1.2.2.102.99|awk 'NR==1 {print $5}'`
+/usr/bin/curl -k "http://domoticz:8080/json.htm?type=command&param=udevice&idx=36&nvalue=0&svalue=$nascputemp"
+
+# NAS HDD1 Temperature
+nashdd1temp=`$snmpcmd2nas .1.3.6.1.3.35517.2.1.3.1.2.2.102.99|awk 'NR==2 {print $2}'|sed s/temperature=//g`
+/usr/bin/curl -k "http://domoticz:8080/json.htm?type=command&param=udevice&idx=37&nvalue=0&svalue=$nashdd1temp"
+
+# NAS HDD2 Temperature
+nashdd2temp=`$snmpcmd2nas .1.3.6.1.3.35517.2.1.3.1.2.2.102.99|awk 'NR==3 {print $2}'|sed s/temperature=//g|sed -e s/\"//g`
+/usr/bin/curl -k "http://domoticz:8080/json.htm?type=command&param=udevice&idx=38&nvalue=0&svalue=$nashdd2temp"
+
+# NAS Fan status
+nasfanstatus=`$snmpcmd2nas .1.3.6.1.3.35518.2.1.4.1.2.2.102.115.1|awk '{print $2}'|sed -e s/\"//g`
+[ $nasfanstatus = "ON" ] && nasfanstatuscor="On"
+[ $nasfanstatus = "OFF" ] && nasfanstatuscor="Off"
+#/usr/bin/curl -s -i -H "Accept: application/json" "http://domoticz:8080/json.htm?type=command&param=switchlight&idx=39&switchcmd=$nasfanstatuscor"
+/usr/bin/curl -k "http://domoticz:8080/json.htm?type=command&param=switchlight&idx=39&switchcmd=$nasfanstatuscor"
