@@ -2,6 +2,7 @@
 
 # Make phonebook for ip-phones in xml format
 # Works with asterisk pjsip mysql db.
+# Dependencies: python3-mysqldb
 
 import MySQLdb
 
