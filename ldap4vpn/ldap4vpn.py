@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 # Script that use for create and delete openVPN-users by group of Active Directory
+# Dependencies: python3-ldap
 
 import ldap
 import os
@@ -117,7 +118,10 @@ def sendMail(userMail, subject, message, filename):
 for user in resultSet:
     userLogin = user[0][1].get("sAMAccountName")[0].decode("utf-8")
     usersList.append(userLogin)
-    userMail = user[0][1].get("mail")[0].decode("utf-8")
+    if len(user[0][1]) < 2:
+        userMail = False
+    else:
+        userMail = user[0][1].get("mail")[0].decode("utf-8")
     if not os.path.isfile(ccdPath + userLogin): # If user not in ccd path, generate config with keys
         print("New user \"%s\" detected" % userLogin)
         userScel = buildDir + userLogin + "/client.conf-skel"
