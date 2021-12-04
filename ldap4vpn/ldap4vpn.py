@@ -117,7 +117,7 @@ def sendMail(userMail, subject, message, filename):
 # Parse users accounts from search request
 for user in resultSet:
     userLogin = user[0][1].get("sAMAccountName")[0].decode("utf-8")
-    if '$' in userLogin:
+    if userLogin.endswith('$'):
         userLogin = userLogin[:-1]
     usersList.append(userLogin)
     if len(user[0][1]) < 2:
