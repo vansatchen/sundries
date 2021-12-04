@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
 # Script that use for create and delete openVPN-users by group of Active Directory
-# Dependencies: python3-ldap
+# Dependencies: python3.4+, python3-ldap
 
 import ldap
 import os
