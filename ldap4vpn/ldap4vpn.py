@@ -171,7 +171,7 @@ for user in resultSet:
         else:
             subject = "Mail " + userLogin + " is not set in Active Directory"
             message = "Please, set it. Config for openvpn sended only for admins."
-            sendMail('ovpn-admins@example.com', subject, message, '')
+            sendMail('ovpn-admins@example.com', subject, message, userLogin + '.zip')
         # Generate ccd file for new user
         with open(ccdPath + userLogin, "w") as file:
             file.write('push "route 10.0.0.0 255.255.255.0"')
