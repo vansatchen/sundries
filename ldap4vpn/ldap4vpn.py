@@ -185,7 +185,8 @@ for vpnUser in vpnUsers: # Search removed users from group
         print("User %s not in VPN group, removing." % vpnUser)
         os.remove(ccdPath + vpnUser)
         command = shlex.split("env -i bash -c 'cd /etc/openvpn/easy-rsa/; source ./vars; ./revoke-full '" + vpnUser)
-        subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        p = subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        p.communicate()
         shutil.copy(ovpnCA + "keys/crl.pem", ovpnDir + "crl.pem")
 
 print("Done.")
