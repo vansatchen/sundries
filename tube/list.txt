@@ -1,0 +1,9 @@
+https://ros.bongacams20.com/bella29
+https://ros.bongacams20.com/saints-slaves
+https://ros.bongacams20.com/chembaby
+https://ros.bongacams20.com/sexyrucoup1e
+https://ros.bongacams20.com/haterss
+
+# MYP
+ffmpeg -rw_timeout 5000000 -i "rtmp://3.livacha.com:1935/live/myr_128741_101820?vhost=live" -c copy -f mp4 test.mp4
+ffmpeg -rw_timeout 5000000 -i "rtmp://3.livacha.com:1935/live/myr_128741_101820?vhost=live" -c copy -f mp4 -strftime 1 "%Y%m%d_MYP.mp4"

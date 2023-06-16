@@ -1,0 +1,2 @@
+ffmpeg -ss 00:11:20 -t 00:03:20 -i SEEX\ 2023-05-17\ 21_40\ \[onlinehdclub\].mp4 -qscale 0 SEEX_1.mp4
+

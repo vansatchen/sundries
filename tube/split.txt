@@ -1,0 +1,2 @@
+ffmpeg -i Baby6Boy9_4.mp4 -acodec copy -vcodec copy -vbsf h264_mp4toannexb -f mpegts Baby6Boy9_4.ts
+ffmpeg -i "concat:Baby6Boy9_1.ts|Baby6Boy9_2.ts|Baby6Boy9_3.ts|Baby6Boy9_4.ts" -c:v copy Baby6Boy9_0-1.mp4
