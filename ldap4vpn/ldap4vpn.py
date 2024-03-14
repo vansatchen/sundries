@@ -1,7 +1,7 @@
 #!/usr/bin/python3
 
-# Script that use for create and delete openVPN-users by group of Active Directory
-# Dependencies: python3.4+, python3-ldap
+# Script for create and delete openVPN-users by group on Active Directory
+# Dependencies: python3.9+, python3-ldap
 
 import ldap
 import os
@@ -31,7 +31,7 @@ sumOfUsers = 0
 sumOfVPNUsers = 0
 ovpnDir = "/etc/openvpn/"
 ccdPath = ovpnDir + "ccd/"
-ovpnCA = ovpnDir + "easy-rsa/"
+ovpnCA = ovpnDir + "easyrsa/"
 buildDir ="/opt/check4vpn/temp/"
 smtpServer = "smtp.example.com"
 fromAddr = "do-not-reply@example.com"
@@ -99,7 +99,7 @@ def sendMail(userMail, subject, message, filename):
     msg['Subject'] = subject
 
     msg.attach(MIMEText(message, 'plain'))
-    attach = ovpnCA + "keys/clients/" + filename
+    attach = ovpnDir + "configs/" + filename
     attachment = open(attach, "rb")
     part = MIMEBase('application', 'octet-stream')
     part.set_payload((attachment).read())
@@ -127,27 +127,33 @@ for user in resultSet:
     if not os.path.isfile(ccdPath + userLogin): # If user not in ccd path, generate config with keys
         print("New user \"%s\" detected" % userLogin)
         userScel = buildDir + userLogin + "/client.conf-skel"
-        command = shlex.split("env -i bash -c 'cd /etc/openvpn/easy-rsa/; source ./vars; ./build-key --batch '" + userLogin)
+        command = shlex.split("env -i bash -c 'cd /etc/openvpn/easyrsa/; export EASYRSA_BATCH=1; EASYRSA_REQ_CN=" + userLogin + " ./easyrsa gen-req " + userLogin + " nopass'")
+        p = subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        p.communicate()
+        command = shlex.split("env -i bash -c 'cd /etc/openvpn/easyrsa/; export EASYRSA_BATCH=1; EASYRSA_REQ_CN=" + userLogin + " ./easyrsa sign-req client " + userLogin + "'")
         p = subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         p.communicate()
         if not os.path.exists(buildDir + userLogin): os.makedirs(buildDir + userLogin)
         shutil.copy(ovpnDir + "client.conf-skel", buildDir + userLogin)
         with open(userScel, "a") as file: file.write('<ca>\n')
-        catFile(ovpnCA + "keys/ca.crt", userScel)
+        catFile(ovpnDir + "server/ca.crt", userScel)
         with open(userScel, "a") as file: file.write('</ca>\n')
         with open(userScel, "a") as file: file.write('<cert>\n')
-        catFile(ovpnCA + "keys/" + userLogin + ".crt", userScel)
+        catFile(ovpnCA + "pki/issued/" + userLogin + ".crt", userScel)
         with open(userScel, "a") as file: file.write('</cert>\n')
         with open(userScel, "a") as file: file.write('<key>\n')
-        catFile(ovpnCA + "keys/" + userLogin + ".key", userScel)
+        catFile(ovpnCA + "pki/private/" + userLogin + ".key", userScel)
         with open(userScel, "a") as file: file.write('</key>\n')
+        with open(userScel, "a") as file: file.write('<tls-crypt>\n')
+        catFile(ovpnDir + "server/ta.key", userScel)
+        with open(userScel, "a") as file: file.write('</tls-crypt>\n')
         os.rename(userScel, userLogin + ".conf")
         shutil.copy(userLogin + ".conf", userLogin + ".ovpn")
         # Zip configs to zipfile
         with zipfile.ZipFile(buildDir + userLogin + "/" + userLogin + ".zip", 'w') as zipConf:
             zipConf.write(userLogin + ".conf")
             zipConf.write(userLogin + ".ovpn")
-        os.replace(buildDir + userLogin + "/" + userLogin + ".zip", ovpnCA + "keys/clients/" + userLogin + ".zip")
+        os.replace(buildDir + userLogin + "/" + userLogin + ".zip", ovpnDir + "configs/" + userLogin + ".zip")
         shutil.rmtree(buildDir + userLogin, ignore_errors=True)
         os.remove(userLogin + ".conf")
         os.remove(userLogin + ".ovpn")
@@ -184,9 +190,15 @@ for vpnUser in vpnUsers: # Search removed users from group
     if not vpnUser in usersList:
         print("User %s not in VPN group, removing." % vpnUser)
         os.remove(ccdPath + vpnUser)
-        command = shlex.split("env -i bash -c 'cd /etc/openvpn/easy-rsa/; source ./vars; ./revoke-full '" + vpnUser)
+        command = shlex.split("env -i bash -c 'cd /etc/openvpn/easyrsa/; export EASYRSA_BATCH=1; ./easyrsa revoke '" + vpnUser)
         p = subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         p.communicate()
-        shutil.copy(ovpnCA + "keys/crl.pem", ovpnDir + "crl.pem")
+        os.remove(ovpnCA + "pki/issued/" + vpnUser + ".crt")
+        os.remove(ovpnCA + "pki/private/" + vpnUser + ".key")
+        command = shlex.split("env -i bash -c 'cd /etc/openvpn/easyrsa/; export EASYRSA_BATCH=1; ./easyrsa gen-crl'")
+        p = subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        p.communicate()
+        shutil.copy(ovpnCA + "pki/crl.pem", ovpnDir + "crl.pem")
+        os.chown(ovpnDir + "crl.pem", 65534, 65534)
 
 print("Done.")
