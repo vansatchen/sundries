@@ -1,5 +1,7 @@
 #!/usr/bin/python3
 
+# Add 'management localhost 7505' to openvpn server config
+
 import telnetlib
 
 HOST = "localhost"
