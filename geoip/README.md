@@ -7,8 +7,17 @@ In this case, the list:
 
 ## Install
 Add to postfix:
+
 **master.cf** to bottom:
 ```
 geoip-check unix - n n - 0 spawn
     user=nobody argv=/etc/postfix/scripts/geoip-reject.py
+```
+
+**main.cf**
+```
+smtpd_relay_restrictions =
+...
+check_policy_service unix:private/geoip-check,
+...
 ```
