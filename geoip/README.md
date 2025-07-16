@@ -21,3 +21,8 @@ smtpd_relay_restrictions =
 check_policy_service unix:private/geoip-check,
 ...
 ```
+```
+smtpd_client_restrictions =
+    check_policy_service unix:private/geoip-check
+    permit
+```
