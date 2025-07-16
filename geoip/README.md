@@ -5,3 +5,10 @@ In this case, the list:
 - BY - Belarus
 - None - for local nets
 
+## Install
+Add to postfix:
+**master.cf** to bottom:
+```
+geoip-check unix - n n - 0 spawn
+    user=nobody argv=/etc/postfix/scripts/geoip-reject.py
+```
